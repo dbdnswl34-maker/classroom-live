@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>교실 실시간 도구 - 선생님 화면</title>
+<link rel="stylesheet" href="style.css" />
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="card row" style="justify-content: space-between;">
+    <h1 style="font-size: 22px;">🏫 교실 실시간 도구 - 선생님 화면</h1>
+    <span id="authStatus" class="status-badge warn">연결 중...</span>
+  </div>
+
+  <div class="card">
+    <div class="row" style="justify-content: space-between;">
+      <div>
+        <div class="muted" style="margin-bottom:6px;">현재 수업 코드</div>
+        <div id="sessionCode" class="session-code">-</div>
+      </div>
+      <div id="qrHolder"></div>
+      <div class="row">
+        <button id="newSessionBtn">🔄 새 수업 시작</button>
+      </div>
+    </div>
+    <p id="studentLink" class="muted" style="word-break: break-all;"></p>
+  </div>
+
+  <div class="card">
+    <div class="row" style="justify-content: space-between; margin-bottom: 8px;">
+      <h3>입장한 학생 (<span id="studentCount">0</span>명)</h3>
+    </div>
+    <div id="studentChips" class="chip-list">
+      <span class="muted">아직 입장한 학생이 없어요.</span>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button id="tabPicker" class="active">🎲 랜덤 뽑기</button>
+    <button id="tabCloud">☁️ 글자구름</button>
+  </div>
+
+  <div id="pickerPanel" class="card">
+    <div class="row" style="margin-bottom: 16px;">
+      <label class="row"><input type="checkbox" id="poolAllInput" checked /> 입장한 학생 중에서 뽑기</label>
+      <label class="row">범위(1~N):
+        <input type="number" id="poolRangeInput" min="1" max="200" value="30" style="width:80px" disabled />
+      </label>
+      <label class="row"><input type="checkbox" id="noRepeatInput" checked /> 중복 없이 뽑기</label>
+    </div>
+    <div class="picker-stage">
+      <div id="pickerNumber" class="picker-number">?</div>
+    </div>
+    <div class="row" style="justify-content:center;">
+      <button id="pickBtn">뽑기!</button>
+      <button id="resetHistoryBtn" class="secondary">뽑기 기록 초기화</button>
+    </div>
+    <div style="margin-top: 20px;">
+      <div class="muted" style="margin-bottom:6px;">뽑힌 기록</div>
+      <div id="pickHistory" class="chip-list"></div>
+    </div>
+  </div>
+
+  <div id="cloudPanel" class="card" style="display:none;">
+    <div class="row" style="justify-content: space-between; margin-bottom: 12px;">
+      <p class="muted" style="margin:0;">학생 화면이 자동으로 단어 입력 화면으로 바뀝니다.</p>
+      <button id="resetWordsBtn" class="secondary">글자구름 초기화</button>
+    </div>
+    <div id="wordcloud" class="wordcloud">
+      <span class="muted">아직 제출된 단어가 없어요.</span>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="teacher.js"></script>
+</body>
+</html>
