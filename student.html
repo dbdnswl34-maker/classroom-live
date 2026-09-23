@@ -4,13 +4,16 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>교실 실시간 도구 - 학생 화면</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 <div class="wrap">
 
   <div id="codeScreen" class="center-screen" style="display:none;">
-    <h1>수업 코드를 입력하세요</h1>
+    <h1>🔑 수업 코드를 입력하세요</h1>
     <div class="row">
       <input type="text" id="codeInput" inputmode="numeric" maxlength="4" placeholder="4자리 코드" style="width:140px; text-align:center; font-size:24px;" />
       <button id="codeSubmitBtn">확인</button>
@@ -19,7 +22,7 @@
   </div>
 
   <div id="joinScreen" class="center-screen" style="display:none;">
-    <h1>번호와 닉네임을 입력하고 입장하세요</h1>
+    <h1>🎈 번호와 닉네임을 입력하고 입장하세요</h1>
     <div class="row">
       <input type="number" id="numberInput" placeholder="내 번호" style="width:120px; text-align:center; font-size:24px;" />
       <input type="text" id="nicknameInput" maxlength="12" placeholder="닉네임" style="width:160px; text-align:center; font-size:24px;" />
@@ -29,14 +32,16 @@
   </div>
 
   <div id="waitScreen" class="center-screen" style="display:none;">
+    <div id="myAvatar1" class="my-avatar"></div>
     <div class="status-badge ok">참여 완료 · <span id="myNumberLabel"></span></div>
-    <h1>선생님 화면을 봐주세요</h1>
+    <h1>👀 선생님 화면을 봐주세요</h1>
     <p class="muted">잠시 후 활동이 시작되면 이 화면이 자동으로 바뀝니다.</p>
   </div>
 
   <div id="wordScreen" class="center-screen" style="display:none;">
+    <div id="myAvatar2" class="my-avatar"></div>
     <div class="status-badge ok"><span id="myNumberLabel2"></span></div>
-    <h1>단어를 입력해서 제출하세요</h1>
+    <h1>✏️ 단어를 입력해서 제출하세요</h1>
     <div class="row">
       <input type="text" id="wordInput" maxlength="20" placeholder="단어 입력" style="width:200px; font-size:20px;" />
       <button id="wordSubmitBtn">제출</button>

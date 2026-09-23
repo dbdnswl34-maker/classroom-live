@@ -1,14 +1,19 @@
 :root {
-  --bg: #0f172a;
-  --panel: #1e293b;
-  --panel-2: #273449;
-  --text: #f1f5f9;
-  --muted: #94a3b8;
-  --accent: #38bdf8;
-  --accent-2: #fbbf24;
-  --danger: #f87171;
-  --ok: #4ade80;
-  --radius: 16px;
+  --bg-1: #fff0f5;
+  --bg-2: #eafff4;
+  --bg-3: #f1eeff;
+  --panel: #ffffff;
+  --panel-2: #fff5f9;
+  --text: #5b4b57;
+  --muted: #a996a6;
+  --pink: #ff8fab;
+  --mint: #58d6ac;
+  --lavender: #b8a9ff;
+  --peach: #ffb37b;
+  --sun: #ffd166;
+  --danger: #ff6b6b;
+  --ok: #35c98c;
+  --radius: 26px;
 }
 
 * { box-sizing: border-box; }
@@ -16,9 +21,10 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: var(--bg);
+  background: linear-gradient(135deg, var(--bg-1), var(--bg-3) 50%, var(--bg-2));
+  background-attachment: fixed;
   color: var(--text);
-  font-family: "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+  font-family: "Jua", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
   padding: 24px;
 }
 
@@ -32,9 +38,10 @@ h1, h2, h3 { margin: 0 0 12px; }
 .card {
   background: var(--panel);
   border-radius: var(--radius);
-  padding: 20px 24px;
+  padding: 22px 26px;
   margin-bottom: 20px;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 10px 24px rgba(255, 143, 171, 0.18);
+  border: 3px solid #ffe3ec;
 }
 
 .row {
@@ -49,36 +56,46 @@ h1, h2, h3 { margin: 0 0 12px; }
 button {
   font: inherit;
   border: none;
-  border-radius: 12px;
-  padding: 12px 20px;
-  background: var(--accent);
-  color: #04212e;
+  border-radius: 999px;
+  padding: 12px 22px;
+  background: var(--pink);
+  color: #fff;
   font-weight: 700;
   cursor: pointer;
-  transition: transform 0.1s ease, filter 0.15s ease;
+  box-shadow: 0 6px 0 #e56690, 0 8px 14px rgba(255, 143, 171, 0.3);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.15s ease;
 }
-button:hover { filter: brightness(1.08); }
-button:active { transform: scale(0.97); }
-button.secondary { background: var(--panel-2); color: var(--text); }
-button.danger { background: var(--danger); color: #2b0a0a; }
-button:disabled { opacity: 0.45; cursor: not-allowed; }
+button:hover { filter: brightness(1.05); transform: translateY(-2px); }
+button:active { transform: translateY(2px); box-shadow: 0 2px 0 #e56690, 0 4px 8px rgba(255, 143, 171, 0.3); }
+button.secondary {
+  background: var(--panel-2);
+  color: var(--text);
+  box-shadow: 0 6px 0 #f4d7e2, 0 8px 14px rgba(255, 143, 171, 0.15);
+}
+button.danger { background: var(--danger); box-shadow: 0 6px 0 #d94c4c, 0 8px 14px rgba(255,107,107,0.3); }
+button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 
 input[type="text"], input[type="number"] {
   font: inherit;
-  padding: 12px 14px;
-  border-radius: 12px;
-  border: 2px solid var(--panel-2);
+  padding: 12px 16px;
+  border-radius: 999px;
+  border: 3px solid #ffe3ec;
   background: var(--panel-2);
   color: var(--text);
   min-width: 0;
 }
-input:focus { outline: 2px solid var(--accent); }
+input:focus { outline: none; border-color: var(--pink); }
 
 .session-code {
   font-size: 48px;
-  font-weight: 800;
-  letter-spacing: 4px;
-  color: var(--accent-2);
+  font-weight: 700;
+  letter-spacing: 6px;
+  color: var(--peach);
+  background: #fff3e6;
+  border: 3px dashed var(--peach);
+  border-radius: 20px;
+  padding: 4px 18px;
+  display: inline-block;
 }
 
 .tabs {
@@ -86,31 +103,50 @@ input:focus { outline: 2px solid var(--accent); }
   gap: 10px;
   margin-bottom: 20px;
 }
-.tabs button { background: var(--panel-2); color: var(--text); }
-.tabs button.active { background: var(--accent); color: #04212e; }
+.tabs button { background: var(--panel); color: var(--text); box-shadow: 0 6px 0 #ffe3ec, 0 8px 14px rgba(255,143,171,0.15); }
+.tabs button.active { background: var(--lavender); color: #fff; box-shadow: 0 6px 0 #9784f2, 0 8px 14px rgba(184,169,255,0.35); }
 
 .chip-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 12px;
 }
 .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   background: var(--panel-2);
+  border: 2px solid #ffe3ec;
   border-radius: 999px;
-  padding: 8px 16px;
+  padding: 6px 16px 6px 6px;
   font-weight: 700;
-  font-size: 18px;
+  font-size: 17px;
+}
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(160deg, #fff, var(--panel-2));
+  border: 2px solid var(--pink);
+  font-size: 20px;
 }
 
 .picker-stage {
   text-align: center;
-  padding: 40px 0;
+  padding: 30px 0;
+}
+.picker-avatar {
+  font-size: 90px;
+  line-height: 1;
 }
 .picker-number {
-  font-size: 88px;
-  font-weight: 900;
-  color: var(--accent-2);
-  line-height: 1.1;
+  font-size: 56px;
+  font-weight: 700;
+  color: var(--peach);
+  line-height: 1.2;
   word-break: keep-all;
 }
 
@@ -124,20 +160,22 @@ input:focus { outline: 2px solid var(--accent); }
   padding: 20px;
 }
 .wordcloud span {
-  font-weight: 800;
+  font-weight: 700;
   white-space: nowrap;
 }
 
 .status-badge {
-  display: inline-block;
-  padding: 4px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
   border-radius: 999px;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
 }
-.status-badge.ok { background: rgba(74, 222, 128, 0.18); color: var(--ok); }
-.status-badge.warn { background: rgba(251, 191, 36, 0.18); color: var(--accent-2); }
-.status-badge.danger { background: rgba(248, 113, 113, 0.18); color: var(--danger); }
+.status-badge.ok { background: rgba(53, 201, 140, 0.15); color: var(--ok); }
+.status-badge.warn { background: rgba(255, 209, 102, 0.25); color: #c98f00; }
+.status-badge.danger { background: rgba(255, 107, 107, 0.15); color: var(--danger); }
 
 .center-screen {
   min-height: 60vh;
@@ -149,9 +187,16 @@ input:focus { outline: 2px solid var(--accent); }
   text-align: center;
 }
 
-a { color: var(--accent); }
+.my-avatar {
+  font-size: 88px;
+  line-height: 1;
+}
+
+a { color: var(--lavender); }
 
 @media (max-width: 640px) {
-  .picker-number { font-size: 48px; }
+  .picker-number { font-size: 34px; }
+  .picker-avatar { font-size: 64px; }
   .session-code { font-size: 32px; }
+  .my-avatar { font-size: 64px; }
 }

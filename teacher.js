@@ -1,4 +1,5 @@
 import { db, ensureAuth } from "./firebase-init.js";
+import { avatarFor } from "./avatars.js";
 import {
   ref,
   set,
@@ -26,6 +27,7 @@ const cloudPanel = document.getElementById("cloudPanel");
 const poolAllInput = document.getElementById("poolAllInput");
 const poolRangeInput = document.getElementById("poolRangeInput");
 const noRepeatInput = document.getElementById("noRepeatInput");
+const pickerAvatar = document.getElementById("pickerAvatar");
 const pickerNumber = document.getElementById("pickerNumber");
 const pickBtn = document.getElementById("pickBtn");
 const resetHistoryBtn = document.getElementById("resetHistoryBtn");
@@ -84,9 +86,11 @@ function renderStudents() {
     return;
   }
   const sorted = [...joinedStudents].sort((a, b) => Number(a) - Number(b));
-  studentChips.innerHTML = sorted
-    .map((n) => `<span class="chip">${escapeHtml(studentLabel(n))}</span>`)
-    .join("");
+  studentChips.innerHTML = sorted.map((n) => chipHtml(n)).join("");
+}
+
+function chipHtml(n) {
+  return `<span class="chip"><span class="avatar">${avatarFor(n)}</span>${escapeHtml(studentLabel(n))}</span>`;
 }
 
 function renderPickHistory() {
@@ -94,9 +98,7 @@ function renderPickHistory() {
     pickHistoryEl.innerHTML = '<span class="muted">아직 뽑은 기록이 없어요.</span>';
     return;
   }
-  pickHistoryEl.innerHTML = pickHistoryList
-    .map((n) => `<span class="chip">${escapeHtml(studentLabel(n))}</span>`)
-    .join("");
+  pickHistoryEl.innerHTML = pickHistoryList.map((n) => chipHtml(n)).join("");
 }
 
 function escapeHtml(str) {
@@ -196,10 +198,12 @@ pickBtn.addEventListener("click", async () => {
   const spinEndAt = Date.now() + spinDuration;
   const spinTimer = setInterval(() => {
     const r = pool[Math.floor(Math.random() * pool.length)];
+    pickerAvatar.textContent = avatarFor(r);
     pickerNumber.textContent = studentLabel(r);
     if (Date.now() >= spinEndAt) {
       clearInterval(spinTimer);
       const finalPick = pool[Math.floor(Math.random() * pool.length)];
+      pickerAvatar.textContent = avatarFor(finalPick);
       pickerNumber.textContent = studentLabel(finalPick);
       if (noRepeatInput.checked) {
         push(ref(db, `sessions/${currentCode}/pickerHistory`), finalPick);
@@ -241,7 +245,7 @@ function renderWordCloud(entries) {
   const maxCount = list[0][1];
   const minPx = 18;
   const maxPx = 100;
-  const palette = ["#38bdf8", "#fbbf24", "#4ade80", "#f472b6", "#a78bfa", "#fb923c"];
+  const palette = ["#ff8fab", "#58d6ac", "#b8a9ff", "#ffb37b", "#4fc3e0", "#ff6b9d"];
   wordcloudEl.innerHTML = list
     .map(([word, count], i) => {
       const size = minPx + (count / maxCount) * (maxPx - minPx);

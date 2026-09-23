@@ -4,6 +4,9 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>교실 실시간 도구 - 선생님 화면</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="style.css" />
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 </head>
@@ -30,7 +33,7 @@
 
   <div class="card">
     <div class="row" style="justify-content: space-between; margin-bottom: 8px;">
-      <h3>입장한 학생 (<span id="studentCount">0</span>명)</h3>
+      <h3>🧑‍🎓 입장한 학생 (<span id="studentCount">0</span>명)</h3>
     </div>
     <div id="studentChips" class="chip-list">
       <span class="muted">아직 입장한 학생이 없어요.</span>
@@ -51,7 +54,8 @@
       <label class="row"><input type="checkbox" id="noRepeatInput" checked /> 중복 없이 뽑기</label>
     </div>
     <div class="picker-stage">
-      <div id="pickerNumber" class="picker-number">?</div>
+      <div id="pickerAvatar" class="picker-avatar">❓</div>
+      <div id="pickerNumber" class="picker-number">-</div>
     </div>
     <div class="row" style="justify-content:center;">
       <button id="pickBtn">뽑기!</button>

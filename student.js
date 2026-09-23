@@ -1,4 +1,5 @@
 import { db, ensureAuth } from "./firebase-init.js";
+import { avatarFor } from "./avatars.js";
 import {
   ref,
   set,
@@ -20,9 +21,11 @@ const joinBtn = document.getElementById("joinBtn");
 const joinError = document.getElementById("joinError");
 
 const waitScreen = document.getElementById("waitScreen");
+const myAvatar1 = document.getElementById("myAvatar1");
 const myNumberLabel = document.getElementById("myNumberLabel");
 
 const wordScreen = document.getElementById("wordScreen");
+const myAvatar2 = document.getElementById("myAvatar2");
 const myNumberLabel2 = document.getElementById("myNumberLabel2");
 const wordInput = document.getElementById("wordInput");
 const wordSubmitBtn = document.getElementById("wordSubmitBtn");
@@ -73,12 +76,15 @@ function askForCode() {
 }
 
 function watchMode(code, student) {
+  const avatar = avatarFor(student.number);
   onValue(ref(db, `sessions/${code}/mode`), (snap) => {
     const mode = snap.val() || "idle";
     if (mode === "wordcloud") {
+      myAvatar2.textContent = avatar;
       myNumberLabel2.textContent = displayLabel(student);
       showScreen(wordScreen);
     } else {
+      myAvatar1.textContent = avatar;
       myNumberLabel.textContent = displayLabel(student);
       showScreen(waitScreen);
     }
