@@ -95,13 +95,13 @@ function setupWordSubmit(code, student) {
   wordSubmitBtn.addEventListener("click", async () => {
     const text = wordInput.value.trim();
     if (!text) return;
+    wordInput.value = "";
     await push(ref(db, `sessions/${code}/words`), {
       text,
       by: student.number,
       nickname: student.nickname,
       ts: serverTimestamp(),
     });
-    wordInput.value = "";
     wordStatus.textContent = `"${text}" 제출했어요!`;
     wordInput.focus();
   });

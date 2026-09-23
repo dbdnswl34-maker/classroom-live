@@ -9,13 +9,13 @@ import {
 import { getDatabase } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID",
+  apiKey: "AIzaSyDbbtN3GK-ODK24GkxVAgn_Ccu89WFPcgA",
+  authDomain: "classroom-live-16637.firebaseapp.com",
+  databaseURL: "https://classroom-live-16637-default-rtdb.firebaseio.com",
+  projectId: "classroom-live-16637",
+  storageBucket: "classroom-live-16637.firebasestorage.app",
+  messagingSenderId: "914330398028",
+  appId: "1:914330398028:web:ba3ee2f730680b912433e9",
 };
 
 export const app = initializeApp(firebaseConfig);
