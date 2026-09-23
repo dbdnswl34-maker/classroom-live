@@ -15,6 +15,7 @@ const codeError = document.getElementById("codeError");
 
 const joinScreen = document.getElementById("joinScreen");
 const numberInput = document.getElementById("numberInput");
+const nicknameInput = document.getElementById("nicknameInput");
 const joinBtn = document.getElementById("joinBtn");
 const joinError = document.getElementById("joinError");
 
@@ -35,7 +36,11 @@ function showScreen(el) {
 }
 
 function studentKey(code) {
-  return `clt_student_number_${code}`;
+  return `clt_student_${code}`;
+}
+
+function displayLabel(student) {
+  return student.nickname ? `${student.number}번 ${student.nickname}` : `${student.number}번`;
 }
 
 async function resolveCode() {
@@ -67,26 +72,27 @@ function askForCode() {
   });
 }
 
-function watchMode(code, studentNumber) {
+function watchMode(code, student) {
   onValue(ref(db, `sessions/${code}/mode`), (snap) => {
     const mode = snap.val() || "idle";
     if (mode === "wordcloud") {
-      myNumberLabel2.textContent = studentNumber;
+      myNumberLabel2.textContent = displayLabel(student);
       showScreen(wordScreen);
     } else {
-      myNumberLabel.textContent = studentNumber;
+      myNumberLabel.textContent = displayLabel(student);
       showScreen(waitScreen);
     }
   });
 }
 
-function setupWordSubmit(code, studentNumber) {
+function setupWordSubmit(code, student) {
   wordSubmitBtn.addEventListener("click", async () => {
     const text = wordInput.value.trim();
     if (!text) return;
     await push(ref(db, `sessions/${code}/words`), {
       text,
-      by: studentNumber,
+      by: student.number,
+      nickname: student.nickname,
       ts: serverTimestamp(),
     });
     wordInput.value = "";
@@ -101,26 +107,37 @@ function setupWordSubmit(code, studentNumber) {
 async function joinWithNumber(code) {
   const saved = localStorage.getItem(studentKey(code));
   if (saved) {
-    watchMode(code, saved);
-    setupWordSubmit(code, saved);
+    const student = JSON.parse(saved);
+    watchMode(code, student);
+    setupWordSubmit(code, student);
     return;
   }
 
   showScreen(joinScreen);
   joinBtn.addEventListener("click", async () => {
     const number = numberInput.value.trim();
+    const nickname = nicknameInput.value.trim();
     if (!number) {
       joinError.textContent = "번호를 입력하세요.";
       return;
     }
+    if (!nickname) {
+      joinError.textContent = "닉네임을 입력하세요.";
+      return;
+    }
+    const student = { number, nickname };
     await set(ref(db, `sessions/${code}/students/${number}`), {
+      nickname,
       joinedAt: serverTimestamp(),
     });
-    localStorage.setItem(studentKey(code), number);
-    watchMode(code, number);
-    setupWordSubmit(code, number);
+    localStorage.setItem(studentKey(code), JSON.stringify(student));
+    watchMode(code, student);
+    setupWordSubmit(code, student);
   });
   numberInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") joinBtn.click();
+  });
+  nicknameInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") joinBtn.click();
   });
 }

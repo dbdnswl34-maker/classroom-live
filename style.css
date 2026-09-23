@@ -107,10 +107,11 @@ input:focus { outline: 2px solid var(--accent); }
   padding: 40px 0;
 }
 .picker-number {
-  font-size: 140px;
+  font-size: 88px;
   font-weight: 900;
   color: var(--accent-2);
-  line-height: 1;
+  line-height: 1.1;
+  word-break: keep-all;
 }
 
 .wordcloud {
@@ -151,6 +152,6 @@ input:focus { outline: 2px solid var(--accent); }
 a { color: var(--accent); }
 
 @media (max-width: 640px) {
-  .picker-number { font-size: 80px; }
+  .picker-number { font-size: 48px; }
   .session-code { font-size: 32px; }
 }

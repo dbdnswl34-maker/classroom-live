@@ -38,6 +38,7 @@ const STORAGE_KEY = "clt_teacher_session_code";
 
 let currentCode = null;
 let joinedStudents = [];
+let studentNicknames = {};
 let pickHistoryList = [];
 let activeUnsubs = [];
 let picking = false;
@@ -71,6 +72,11 @@ async function startNewSession() {
   attachSession(code);
 }
 
+function studentLabel(n) {
+  const nickname = studentNicknames[n] && studentNicknames[n].nickname;
+  return nickname ? `${n}번 ${nickname}` : `${n}번`;
+}
+
 function renderStudents() {
   studentCountEl.textContent = joinedStudents.length;
   if (joinedStudents.length === 0) {
@@ -79,7 +85,7 @@ function renderStudents() {
   }
   const sorted = [...joinedStudents].sort((a, b) => Number(a) - Number(b));
   studentChips.innerHTML = sorted
-    .map((n) => `<span class="chip">${escapeHtml(n)}</span>`)
+    .map((n) => `<span class="chip">${escapeHtml(studentLabel(n))}</span>`)
     .join("");
 }
 
@@ -89,7 +95,7 @@ function renderPickHistory() {
     return;
   }
   pickHistoryEl.innerHTML = pickHistoryList
-    .map((n) => `<span class="chip">${escapeHtml(n)}</span>`)
+    .map((n) => `<span class="chip">${escapeHtml(studentLabel(n))}</span>`)
     .join("");
 }
 
@@ -118,6 +124,7 @@ function attachSession(code) {
     onValue(ref(db, `sessions/${code}/students`), (snap) => {
       const val = snap.val() || {};
       joinedStudents = Object.keys(val);
+      studentNicknames = val;
       renderStudents();
     })
   );
@@ -189,11 +196,11 @@ pickBtn.addEventListener("click", async () => {
   const spinEndAt = Date.now() + spinDuration;
   const spinTimer = setInterval(() => {
     const r = pool[Math.floor(Math.random() * pool.length)];
-    pickerNumber.textContent = r;
+    pickerNumber.textContent = studentLabel(r);
     if (Date.now() >= spinEndAt) {
       clearInterval(spinTimer);
       const finalPick = pool[Math.floor(Math.random() * pool.length)];
-      pickerNumber.textContent = finalPick;
+      pickerNumber.textContent = studentLabel(finalPick);
       if (noRepeatInput.checked) {
         push(ref(db, `sessions/${currentCode}/pickerHistory`), finalPick);
       }
