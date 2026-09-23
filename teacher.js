@@ -1,5 +1,6 @@
 import { db, ensureAuth } from "./firebase-init.js";
 import { avatarFor } from "./avatars.js";
+import { REACTION_TYPES } from "./reactions.js";
 import {
   ref,
   set,
@@ -21,8 +22,14 @@ const studentCountEl = document.getElementById("studentCount");
 
 const tabPicker = document.getElementById("tabPicker");
 const tabCloud = document.getElementById("tabCloud");
+const tabReaction = document.getElementById("tabReaction");
+const tabPoll = document.getElementById("tabPoll");
+const tabBuzzer = document.getElementById("tabBuzzer");
 const pickerPanel = document.getElementById("pickerPanel");
 const cloudPanel = document.getElementById("cloudPanel");
+const reactionPanel = document.getElementById("reactionPanel");
+const pollPanel = document.getElementById("pollPanel");
+const buzzerPanel = document.getElementById("buzzerPanel");
 
 const poolAllInput = document.getElementById("poolAllInput");
 const poolRangeInput = document.getElementById("poolRangeInput");
@@ -36,12 +43,30 @@ const pickHistoryEl = document.getElementById("pickHistory");
 const resetWordsBtn = document.getElementById("resetWordsBtn");
 const wordcloudEl = document.getElementById("wordcloud");
 
+const resetReactionsBtn = document.getElementById("resetReactionsBtn");
+const reactionBoard = document.getElementById("reactionBoard");
+
+const pollEditor = document.getElementById("pollEditor");
+const pollResults = document.getElementById("pollResults");
+const pollQuestionInput = document.getElementById("pollQuestionInput");
+const pollOptionInputs = [...document.querySelectorAll(".poll-option-input")];
+const startPollBtn = document.getElementById("startPollBtn");
+const pollQuestionLabel = document.getElementById("pollQuestionLabel");
+const pollBars = document.getElementById("pollBars");
+const newPollBtn = document.getElementById("newPollBtn");
+
+const newRoundBtn = document.getElementById("newRoundBtn");
+const buzzerOrderEl = document.getElementById("buzzerOrder");
+
 const STORAGE_KEY = "clt_teacher_session_code";
 
 let currentCode = null;
 let joinedStudents = [];
 let studentNicknames = {};
 let pickHistoryList = [];
+let latestReactions = {};
+let latestPoll = null;
+let latestBuzzer = null;
 let activeUnsubs = [];
 let picking = false;
 let pickerMode = "spinner";
@@ -84,10 +109,94 @@ function renderStudents() {
   studentCountEl.textContent = joinedStudents.length;
   if (joinedStudents.length === 0) {
     studentChips.innerHTML = '<span class="muted">아직 입장한 학생이 없어요.</span>';
+  } else {
+    const sorted = [...joinedStudents].sort((a, b) => Number(a) - Number(b));
+    studentChips.innerHTML = sorted.map((n) => chipHtml(n)).join("");
+  }
+  renderReactionBoard();
+}
+
+function reactionCategoryHtml(emoji, label, list) {
+  const chips = list.length
+    ? list.sort((a, b) => Number(a) - Number(b)).map((n) => chipHtml(n)).join("")
+    : '<span class="muted" style="font-size:13px;">없음</span>';
+  return `
+    <div class="reaction-category">
+      <div class="reaction-category-header">${emoji}</div>
+      <div class="reaction-category-count">${escapeHtml(label)} (${list.length})</div>
+      <div class="chip-list">${chips}</div>
+    </div>
+  `;
+}
+
+function renderReactionBoard() {
+  const groups = {};
+  for (const t of REACTION_TYPES) groups[t.key] = [];
+  const responded = new Set();
+  for (const n of Object.keys(latestReactions)) {
+    const key = latestReactions[n] && latestReactions[n].reaction;
+    if (groups[key]) {
+      groups[key].push(n);
+      responded.add(n);
+    }
+  }
+  const noResponse = joinedStudents.filter((n) => !responded.has(n));
+
+  const cards = REACTION_TYPES.map((t) => reactionCategoryHtml(t.emoji, t.label, groups[t.key]));
+  cards.push(reactionCategoryHtml("🤔", "응답 없음", noResponse));
+  reactionBoard.innerHTML = cards.join("");
+}
+
+function renderPoll() {
+  if (!latestPoll || !latestPoll.question) {
+    pollEditor.style.display = "block";
+    pollResults.style.display = "none";
     return;
   }
-  const sorted = [...joinedStudents].sort((a, b) => Number(a) - Number(b));
-  studentChips.innerHTML = sorted.map((n) => chipHtml(n)).join("");
+  pollEditor.style.display = "none";
+  pollResults.style.display = "block";
+  pollQuestionLabel.textContent = latestPoll.question;
+  const options = latestPoll.options || [];
+  const votes = latestPoll.votes || {};
+  const counts = options.map(() => 0);
+  for (const v of Object.values(votes)) {
+    if (typeof v === "number" && counts[v] !== undefined) counts[v]++;
+  }
+  const total = counts.reduce((a, b) => a + b, 0);
+  const palette = ["#ff8fab", "#58d6ac", "#b8a9ff", "#ffb37b"];
+  pollBars.innerHTML = options
+    .map((opt, i) => {
+      const pct = total ? Math.round((counts[i] / total) * 100) : 0;
+      return `
+        <div class="poll-bar-row">
+          <div class="poll-bar-label"><span>${escapeHtml(opt)}</span><span>${counts[i]}표 (${pct}%)</span></div>
+          <div class="poll-bar-track"><div class="poll-bar-fill" style="width:${pct}%;background:${palette[i % palette.length]}"></div></div>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function renderBuzzer() {
+  const buzzes = (latestBuzzer && latestBuzzer.buzzes) || {};
+  const entries = Object.entries(buzzes).sort((a, b) => a[1] - b[1]);
+  if (entries.length === 0) {
+    buzzerOrderEl.innerHTML = '<span class="muted">아직 누른 학생이 없어요.</span>';
+    return;
+  }
+  const medals = ["🥇", "🥈", "🥉"];
+  buzzerOrderEl.innerHTML = entries
+    .map(([n], i) => {
+      const rank = medals[i] || `${i + 1}.`;
+      return `
+        <div class="buzzer-row">
+          <span class="buzzer-rank">${rank}</span>
+          <span class="avatar">${avatarFor(n)}</span>
+          <span>${escapeHtml(studentLabel(n))}</span>
+        </div>
+      `;
+    })
+    .join("");
 }
 
 function chipHtml(n) {
@@ -179,6 +288,27 @@ function attachSession(code) {
       renderWordCloud(Object.values(val));
     })
   );
+
+  activeUnsubs.push(
+    onValue(ref(db, `sessions/${code}/reactions`), (snap) => {
+      latestReactions = snap.val() || {};
+      renderReactionBoard();
+    })
+  );
+
+  activeUnsubs.push(
+    onValue(ref(db, `sessions/${code}/poll`), (snap) => {
+      latestPoll = snap.val();
+      renderPoll();
+    })
+  );
+
+  activeUnsubs.push(
+    onValue(ref(db, `sessions/${code}/buzzer`), (snap) => {
+      latestBuzzer = snap.val();
+      renderBuzzer();
+    })
+  );
 }
 
 newSessionBtn.addEventListener("click", () => {
@@ -187,11 +317,20 @@ newSessionBtn.addEventListener("click", () => {
 });
 
 // 탭 전환
+const TAB_PANELS = {
+  picker: { btn: tabPicker, panel: pickerPanel },
+  wordcloud: { btn: tabCloud, panel: cloudPanel },
+  reaction: { btn: tabReaction, panel: reactionPanel },
+  poll: { btn: tabPoll, panel: pollPanel },
+  buzzer: { btn: tabBuzzer, panel: buzzerPanel },
+};
+
 function setActiveTab(mode) {
-  tabPicker.classList.toggle("active", mode === "picker");
-  tabCloud.classList.toggle("active", mode === "wordcloud");
-  pickerPanel.style.display = mode === "wordcloud" ? "none" : "block";
-  cloudPanel.style.display = mode === "wordcloud" ? "block" : "none";
+  const active = TAB_PANELS[mode] ? mode : "picker";
+  for (const [key, { btn, panel }] of Object.entries(TAB_PANELS)) {
+    btn.classList.toggle("active", key === active);
+    panel.style.display = key === active ? "block" : "none";
+  }
 }
 
 async function setMode(mode) {
@@ -202,6 +341,9 @@ async function setMode(mode) {
 
 tabPicker.addEventListener("click", () => setMode("picker"));
 tabCloud.addEventListener("click", () => setMode("wordcloud"));
+tabReaction.addEventListener("click", () => setMode("reaction"));
+tabPoll.addEventListener("click", () => setMode("poll"));
+tabBuzzer.addEventListener("click", () => setMode("buzzer"));
 
 poolAllInput.addEventListener("change", () => {
   poolRangeInput.disabled = poolAllInput.checked;
@@ -409,6 +551,43 @@ resetWordsBtn.addEventListener("click", async () => {
   await remove(ref(db, `sessions/${currentCode}/words`));
 });
 
+resetReactionsBtn.addEventListener("click", async () => {
+  if (!currentCode) return;
+  if (!confirm("반응을 초기화할까요?")) return;
+  await remove(ref(db, `sessions/${currentCode}/reactions`));
+});
+
+startPollBtn.addEventListener("click", async () => {
+  if (!currentCode) return;
+  const question = pollQuestionInput.value.trim();
+  const options = pollOptionInputs.map((i) => i.value.trim()).filter(Boolean);
+  if (!question) {
+    alert("질문을 입력하세요.");
+    return;
+  }
+  if (options.length < 2) {
+    alert("선택지를 2개 이상 입력하세요.");
+    return;
+  }
+  await set(ref(db, `sessions/${currentCode}/poll`), {
+    question,
+    options,
+    createdAt: serverTimestamp(),
+  });
+  pollQuestionInput.value = "";
+  pollOptionInputs.forEach((i) => (i.value = ""));
+});
+
+newPollBtn.addEventListener("click", async () => {
+  if (!currentCode) return;
+  await remove(ref(db, `sessions/${currentCode}/poll`));
+});
+
+newRoundBtn.addEventListener("click", async () => {
+  if (!currentCode) return;
+  await set(ref(db, `sessions/${currentCode}/buzzer`), { startedAt: serverTimestamp() });
+});
+
 function renderWordCloud(entries) {
   if (entries.length === 0) {
     wordcloudEl.innerHTML = '<span class="muted">아직 제출된 단어가 없어요.</span>';
@@ -464,7 +643,7 @@ async function init() {
     if (snap.exists()) {
       attachSession(saved);
       const mode = (snap.val() && snap.val().mode) || "idle";
-      setActiveTab(mode === "wordcloud" ? "wordcloud" : "picker");
+      setActiveTab(mode);
       return;
     }
   }

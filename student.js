@@ -1,5 +1,6 @@
 import { db, ensureAuth } from "./firebase-init.js";
 import { avatarFor } from "./avatars.js";
+import { REACTION_TYPES } from "./reactions.js";
 import {
   ref,
   set,
@@ -31,11 +32,48 @@ const wordInput = document.getElementById("wordInput");
 const wordSubmitBtn = document.getElementById("wordSubmitBtn");
 const wordStatus = document.getElementById("wordStatus");
 
+const reactionScreen = document.getElementById("reactionScreen");
+const myAvatar3 = document.getElementById("myAvatar3");
+const myNumberLabel3 = document.getElementById("myNumberLabel3");
+const reactionButtonsEl = document.getElementById("reactionButtons");
+
+const pollScreen = document.getElementById("pollScreen");
+const myAvatar4 = document.getElementById("myAvatar4");
+const myNumberLabel4 = document.getElementById("myNumberLabel4");
+const pollQuestionText = document.getElementById("pollQuestionText");
+const pollOptionButtonsEl = document.getElementById("pollOptionButtons");
+
+const buzzerScreen = document.getElementById("buzzerScreen");
+const myAvatar5 = document.getElementById("myAvatar5");
+const myNumberLabel5 = document.getElementById("myNumberLabel5");
+const buzzBtn = document.getElementById("buzzBtn");
+const buzzStatus = document.getElementById("buzzStatus");
+
+const ALL_SCREENS = [
+  codeScreen,
+  joinScreen,
+  waitScreen,
+  wordScreen,
+  reactionScreen,
+  pollScreen,
+  buzzerScreen,
+];
+
 function showScreen(el) {
-  for (const s of [codeScreen, joinScreen, waitScreen, wordScreen]) {
+  for (const s of ALL_SCREENS) {
     s.style.display = "none";
   }
   el.style.display = "flex";
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  }[c]));
 }
 
 function studentKey(code) {
@@ -75,19 +113,30 @@ function askForCode() {
   });
 }
 
+const MODE_SCREENS = {
+  wordcloud: () => wordScreen,
+  reaction: () => reactionScreen,
+  poll: () => pollScreen,
+  buzzer: () => buzzerScreen,
+};
+
 function watchMode(code, student) {
   const avatar = avatarFor(student.number);
+  const label = displayLabel(student);
   onValue(ref(db, `sessions/${code}/mode`), (snap) => {
     const mode = snap.val() || "idle";
-    if (mode === "wordcloud") {
-      myAvatar2.textContent = avatar;
-      myNumberLabel2.textContent = displayLabel(student);
-      showScreen(wordScreen);
-    } else {
-      myAvatar1.textContent = avatar;
-      myNumberLabel.textContent = displayLabel(student);
-      showScreen(waitScreen);
-    }
+    myAvatar1.textContent = avatar;
+    myAvatar2.textContent = avatar;
+    myAvatar3.textContent = avatar;
+    myAvatar4.textContent = avatar;
+    myAvatar5.textContent = avatar;
+    myNumberLabel.textContent = label;
+    myNumberLabel2.textContent = label;
+    myNumberLabel3.textContent = label;
+    myNumberLabel4.textContent = label;
+    myNumberLabel5.textContent = label;
+    const screen = MODE_SCREENS[mode] ? MODE_SCREENS[mode]() : waitScreen;
+    showScreen(screen);
   });
 }
 
@@ -110,12 +159,88 @@ function setupWordSubmit(code, student) {
   });
 }
 
+function setupReactions(code, student) {
+  reactionButtonsEl.innerHTML = REACTION_TYPES.map(
+    (r) =>
+      `<button class="reaction-btn" data-key="${r.key}"><span>${r.emoji}</span><span class="reaction-btn-label">${escapeHtml(r.label)}</span></button>`
+  ).join("");
+  const buttons = [...reactionButtonsEl.querySelectorAll(".reaction-btn")];
+  buttons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      set(ref(db, `sessions/${code}/reactions/${student.number}`), {
+        reaction: btn.dataset.key,
+        ts: serverTimestamp(),
+      });
+    });
+  });
+  onValue(ref(db, `sessions/${code}/reactions/${student.number}`), (snap) => {
+    const current = snap.val() && snap.val().reaction;
+    buttons.forEach((btn) => btn.classList.toggle("selected", btn.dataset.key === current));
+  });
+}
+
+function setupPoll(code, student) {
+  onValue(ref(db, `sessions/${code}/poll`), (snap) => {
+    const poll = snap.val();
+    if (!poll || !poll.question) {
+      pollQuestionText.textContent = "📊 선생님이 질문을 준비 중이에요";
+      pollOptionButtonsEl.innerHTML = "";
+      return;
+    }
+    pollQuestionText.textContent = poll.question;
+    const options = poll.options || [];
+    const myVote = poll.votes && poll.votes[student.number];
+    pollOptionButtonsEl.innerHTML = options
+      .map(
+        (opt, i) =>
+          `<button class="poll-option-btn ${i === myVote ? "selected" : ""}" data-i="${i}">${escapeHtml(opt)}</button>`
+      )
+      .join("");
+    pollOptionButtonsEl.querySelectorAll(".poll-option-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        set(ref(db, `sessions/${code}/poll/votes/${student.number}`), Number(btn.dataset.i));
+      });
+    });
+  });
+}
+
+function setupBuzzer(code, student) {
+  let lastRoundKey = null;
+  let pressedThisRound = false;
+
+  function updateBuzzBtn() {
+    buzzBtn.disabled = pressedThisRound;
+    buzzBtn.classList.toggle("pressed", pressedThisRound);
+    buzzStatus.textContent = pressedThisRound ? "눌렀어요! 결과를 기다려주세요." : "";
+  }
+
+  onValue(ref(db, `sessions/${code}/buzzer`), (snap) => {
+    const val = snap.val() || {};
+    const roundKey = val.startedAt || null;
+    if (roundKey !== lastRoundKey) {
+      lastRoundKey = roundKey;
+      pressedThisRound = !!(val.buzzes && val.buzzes[student.number]);
+      updateBuzzBtn();
+    }
+  });
+
+  buzzBtn.addEventListener("click", () => {
+    if (pressedThisRound) return;
+    pressedThisRound = true;
+    updateBuzzBtn();
+    set(ref(db, `sessions/${code}/buzzer/buzzes/${student.number}`), serverTimestamp());
+  });
+}
+
 async function joinWithNumber(code) {
   const saved = localStorage.getItem(studentKey(code));
   if (saved) {
     const student = JSON.parse(saved);
     watchMode(code, student);
     setupWordSubmit(code, student);
+    setupReactions(code, student);
+    setupPoll(code, student);
+    setupBuzzer(code, student);
     return;
   }
 
@@ -139,6 +264,9 @@ async function joinWithNumber(code) {
     localStorage.setItem(studentKey(code), JSON.stringify(student));
     watchMode(code, student);
     setupWordSubmit(code, student);
+    setupReactions(code, student);
+    setupPoll(code, student);
+    setupBuzzer(code, student);
   });
   numberInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") joinBtn.click();

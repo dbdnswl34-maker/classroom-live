@@ -43,6 +43,9 @@
   <div class="tabs">
     <button id="tabPicker" class="active">🎲 랜덤 뽑기</button>
     <button id="tabCloud">☁️ 글자구름</button>
+    <button id="tabReaction">🙋 반응</button>
+    <button id="tabPoll">📊 투표</button>
+    <button id="tabBuzzer">🔔 버저</button>
   </div>
 
   <div id="pickerPanel" class="card">
@@ -77,6 +80,45 @@
     </div>
     <div id="wordcloud" class="wordcloud">
       <span class="muted">아직 제출된 단어가 없어요.</span>
+    </div>
+  </div>
+
+  <div id="reactionPanel" class="card" style="display:none;">
+    <div class="row" style="justify-content: space-between; margin-bottom: 12px;">
+      <p class="muted" style="margin:0;">학생 화면에 반응 버튼이 뜹니다.</p>
+      <button id="resetReactionsBtn" class="secondary">반응 초기화</button>
+    </div>
+    <div id="reactionBoard" class="reaction-board"></div>
+  </div>
+
+  <div id="pollPanel" class="card" style="display:none;">
+    <div id="pollEditor">
+      <p class="muted" style="margin-top:0;">질문과 선택지(2~4개)를 입력하고 투표를 시작하세요.</p>
+      <input type="text" id="pollQuestionInput" placeholder="질문을 입력하세요" style="width:100%; margin-bottom:12px;" />
+      <div class="poll-option-grid">
+        <input type="text" class="poll-option-input" placeholder="선택지 1" />
+        <input type="text" class="poll-option-input" placeholder="선택지 2" />
+        <input type="text" class="poll-option-input" placeholder="선택지 3" />
+        <input type="text" class="poll-option-input" placeholder="선택지 4" />
+      </div>
+      <button id="startPollBtn">투표 시작</button>
+    </div>
+    <div id="pollResults" style="display:none;">
+      <h3 id="pollQuestionLabel"></h3>
+      <div id="pollBars" class="poll-bars"></div>
+      <div class="row" style="margin-top:16px;">
+        <button id="newPollBtn" class="secondary">새 질문 만들기</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="buzzerPanel" class="card" style="display:none;">
+    <div class="row" style="justify-content: space-between; margin-bottom: 12px;">
+      <p class="muted" style="margin:0;">학생 화면에 버튼이 뜨고, 누른 순서대로 여기 표시돼요.</p>
+      <button id="newRoundBtn">🔔 새 라운드 시작</button>
+    </div>
+    <div id="buzzerOrder" class="buzzer-order">
+      <span class="muted">아직 라운드가 시작되지 않았어요.</span>
     </div>
   </div>
 </div>

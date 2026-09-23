@@ -49,6 +49,28 @@
     <p id="wordStatus" class="muted"></p>
   </div>
 
+  <div id="reactionScreen" class="center-screen" style="display:none;">
+    <div id="myAvatar3" class="my-avatar"></div>
+    <div class="status-badge ok"><span id="myNumberLabel3"></span></div>
+    <h1>🙋 지금 상태를 눌러주세요</h1>
+    <div id="reactionButtons" class="reaction-btn-grid"></div>
+  </div>
+
+  <div id="pollScreen" class="center-screen" style="display:none;">
+    <div id="myAvatar4" class="my-avatar"></div>
+    <div class="status-badge ok"><span id="myNumberLabel4"></span></div>
+    <h1 id="pollQuestionText">📊 선생님이 질문을 준비 중이에요</h1>
+    <div id="pollOptionButtons" class="poll-option-buttons"></div>
+  </div>
+
+  <div id="buzzerScreen" class="center-screen" style="display:none;">
+    <div id="myAvatar5" class="my-avatar"></div>
+    <div class="status-badge ok"><span id="myNumberLabel5"></span></div>
+    <h1>🔔 준비되면 버튼을 누르세요!</h1>
+    <button id="buzzBtn" class="buzz-btn">누르기!</button>
+    <p id="buzzStatus" class="muted"></p>
+  </div>
+
 </div>
 
 <script type="module" src="student.js"></script>
