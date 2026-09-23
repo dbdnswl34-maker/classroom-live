@@ -27,8 +27,8 @@ const cloudPanel = document.getElementById("cloudPanel");
 const poolAllInput = document.getElementById("poolAllInput");
 const poolRangeInput = document.getElementById("poolRangeInput");
 const noRepeatInput = document.getElementById("noRepeatInput");
-const pickerAvatar = document.getElementById("pickerAvatar");
-const pickerNumber = document.getElementById("pickerNumber");
+const modeButtons = [...document.querySelectorAll(".mode-btn")];
+const pickerStage = document.getElementById("pickerStage");
 const pickBtn = document.getElementById("pickBtn");
 const resetHistoryBtn = document.getElementById("resetHistoryBtn");
 const pickHistoryEl = document.getElementById("pickHistory");
@@ -44,6 +44,7 @@ let studentNicknames = {};
 let pickHistoryList = [];
 let activeUnsubs = [];
 let picking = false;
+let pickerMode = "spinner";
 
 function randomCode() {
   return String(Math.floor(1000 + Math.random() * 9000));
@@ -93,6 +94,37 @@ function chipHtml(n) {
   return `<span class="chip"><span class="avatar">${avatarFor(n)}</span>${escapeHtml(studentLabel(n))}</span>`;
 }
 
+function getPool() {
+  let pool;
+  if (poolAllInput.checked) {
+    pool = [...joinedStudents];
+  } else {
+    const n = Math.max(1, Number(poolRangeInput.value) || 1);
+    pool = Array.from({ length: n }, (_, i) => String(i + 1));
+  }
+  if (noRepeatInput.checked) {
+    const excluded = new Set(pickHistoryList);
+    pool = pool.filter((n) => !excluded.has(n));
+  }
+  return pool;
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// 화면에 다 그리기엔 너무 많은 후보 풀일 때, 당첨자는 반드시 포함하고 나머지는 무작위로 골라 cap개만 보여준다.
+function sampleForDisplay(pool, winner, cap) {
+  if (pool.length <= cap) return shuffle(pool);
+  const others = shuffle(pool.filter((p) => p !== winner)).slice(0, cap - 1);
+  return shuffle([...others, winner]);
+}
+
 function renderPickHistory() {
   if (pickHistoryList.length === 0) {
     pickHistoryEl.innerHTML = '<span class="muted">아직 뽑은 기록이 없어요.</span>';
@@ -128,6 +160,7 @@ function attachSession(code) {
       joinedStudents = Object.keys(val);
       studentNicknames = val;
       renderStudents();
+      if (!picking) renderIdleStage();
     })
   );
 
@@ -136,6 +169,7 @@ function attachSession(code) {
       const val = snap.val() || {};
       pickHistoryList = Object.values(val);
       renderPickHistory();
+      if (!picking) renderIdleStage();
     })
   );
 
@@ -171,47 +205,196 @@ tabCloud.addEventListener("click", () => setMode("wordcloud"));
 
 poolAllInput.addEventListener("change", () => {
   poolRangeInput.disabled = poolAllInput.checked;
+  renderIdleStage();
 });
+poolRangeInput.addEventListener("change", renderIdleStage);
+noRepeatInput.addEventListener("change", renderIdleStage);
+
+modeButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    modeButtons.forEach((b) => b.classList.toggle("active", b === btn));
+    pickerMode = btn.dataset.mode;
+    renderIdleStage();
+  });
+});
+
+function renderIdleStage() {
+  const pool = getPool();
+  if (pickerMode === "lottery") renderLotteryIdle(pool);
+  else if (pickerMode === "race") renderRaceIdle(pool);
+  else if (pickerMode === "pinball") renderPinballIdle(pool);
+  else renderSpinnerIdle();
+}
+
+function renderSpinnerIdle() {
+  pickerStage.innerHTML = `
+    <div class="picker-avatar">❓</div>
+    <div class="picker-number">-</div>
+  `;
+}
+
+const LOTTERY_CAP = 30;
+const RACE_CAP = 12;
+const PINBALL_CAP = 10;
+
+function renderLotteryIdle(pool) {
+  const shown = pool.slice(0, LOTTERY_CAP);
+  pickerStage.innerHTML = `<div class="lottery-grid">${shown
+    .map(() => slipHtml())
+    .join("")}</div>`;
+}
+
+function slipHtml(n) {
+  const front = n
+    ? `<div class="slip-avatar">${avatarFor(n)}</div><div>${escapeHtml(studentLabel(n))}</div>`
+    : "";
+  return `
+    <div class="slip" data-n="${n || ""}">
+      <div class="slip-face slip-back">🎫</div>
+      <div class="slip-face slip-front">${front}</div>
+    </div>
+  `;
+}
+
+function renderRaceIdle(pool) {
+  const shown = pool.slice(0, RACE_CAP);
+  pickerStage.innerHTML = `<div class="race-track">${shown
+    .map((n) => raceLaneHtml(n))
+    .join("")}</div>`;
+}
+
+function raceLaneHtml(n) {
+  return `
+    <div class="race-lane" data-n="${n}">
+      <div class="race-runner" style="left:4px;">${avatarFor(n)}<span class="runner-label">${escapeHtml(studentLabel(n))}</span></div>
+    </div>
+  `;
+}
+
+function renderPinballIdle(pool) {
+  renderPinballBoard(pool.slice(0, PINBALL_CAP));
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function runSpinner(pool, finalPick) {
+  renderSpinnerIdle();
+  const avatarEl = pickerStage.querySelector(".picker-avatar");
+  const numberEl = pickerStage.querySelector(".picker-number");
+  const spinDuration = 1200;
+  const spinStep = 80;
+  const steps = Math.floor(spinDuration / spinStep);
+  for (let i = 0; i < steps; i++) {
+    const r = pool[Math.floor(Math.random() * pool.length)];
+    avatarEl.textContent = avatarFor(r);
+    numberEl.textContent = studentLabel(r);
+    await sleep(spinStep);
+  }
+  avatarEl.textContent = avatarFor(finalPick);
+  numberEl.textContent = studentLabel(finalPick);
+}
+
+async function runLottery(pool, finalPick) {
+  const shown = sampleForDisplay(pool, finalPick, LOTTERY_CAP);
+  pickerStage.innerHTML = `<div class="lottery-grid">${shown.map((n) => slipHtml(n)).join("")}</div>`;
+  const slips = [...pickerStage.querySelectorAll(".slip")];
+  slips.forEach((s) => s.classList.add("shaking"));
+  await sleep(900);
+  slips.forEach((s) => s.classList.remove("shaking"));
+  await sleep(150);
+  for (const s of slips) {
+    if (s.dataset.n === finalPick) {
+      s.classList.add("flipped", "winner");
+    } else {
+      s.classList.add("dimmed");
+    }
+  }
+  await sleep(650);
+}
+
+async function runRace(pool, finalPick) {
+  const shown = sampleForDisplay(pool, finalPick, RACE_CAP);
+  pickerStage.innerHTML = `<div class="race-track">${shown.map((n) => raceLaneHtml(n)).join("")}</div>`;
+  await sleep(30); // 시작 위치가 먼저 그려지도록 한 프레임 대기
+  const lanes = [...pickerStage.querySelectorAll(".race-lane")];
+  const winDuration = 1.8 + Math.random() * 0.3;
+  lanes.forEach((lane) => {
+    const runner = lane.querySelector(".race-runner");
+    const isWinner = lane.dataset.n === finalPick;
+    const duration = isWinner ? winDuration : winDuration + 0.4 + Math.random() * 0.8;
+    runner.style.transitionDuration = `${duration}s`;
+    runner.style.left = "calc(100% - 110px)";
+  });
+  await sleep((winDuration + 1.3) * 1000);
+  lanes.forEach((lane) => lane.classList.toggle("winner", lane.dataset.n === finalPick));
+}
+
+async function runPinball(pool, finalPick) {
+  const shown = sampleForDisplay(pool, finalPick, PINBALL_CAP);
+  const winnerIndex = Math.max(0, shown.indexOf(finalPick));
+  renderPinballBoard(shown);
+  const ball = pickerStage.querySelector(".pinball-ball");
+  const slotCount = shown.length;
+  const targetX = ((winnerIndex + 0.5) / slotCount) * 100;
+  const totalSteps = 26;
+  for (let i = 1; i <= totalSteps; i++) {
+    const progress = i / totalSteps;
+    const wobble = Math.sin(progress * Math.PI * 5) * (1 - progress) * 12;
+    const x = 50 + (targetX - 50) * progress + wobble;
+    const y = 6 + progress * 82;
+    ball.style.left = `${x}%`;
+    ball.style.top = `${y}%`;
+    await sleep(35);
+  }
+  const slots = [...pickerStage.querySelectorAll(".pinball-slot")];
+  slots.forEach((slot, i) => slot.classList.toggle("winner", i === winnerIndex));
+}
+
+function renderPinballBoard(shown) {
+  const pegs = [];
+  const rows = 4;
+  for (let r = 1; r <= rows; r++) {
+    const cols = 4 + (r % 2);
+    for (let c = 0; c < cols; c++) {
+      const x = ((c + 0.5) / cols) * 100;
+      const y = (r / (rows + 1)) * 100;
+      pegs.push(`<div class="pinball-peg" style="left:${x}%;top:${y}%;"></div>`);
+    }
+  }
+  pickerStage.innerHTML = `
+    <div class="pinball-board">
+      ${pegs.join("")}
+      <div class="pinball-ball" style="left:50%;top:6%;"></div>
+    </div>
+    <div class="pinball-slots">${shown
+      .map((n) => `<div class="pinball-slot" data-n="${n}">${avatarFor(n)}</div>`)
+      .join("")}</div>
+  `;
+}
 
 pickBtn.addEventListener("click", async () => {
   if (!currentCode || picking) return;
-  let pool;
-  if (poolAllInput.checked) {
-    pool = [...joinedStudents];
-  } else {
-    const n = Math.max(1, Number(poolRangeInput.value) || 1);
-    pool = Array.from({ length: n }, (_, i) => String(i + 1));
-  }
-  if (noRepeatInput.checked) {
-    const excluded = new Set(pickHistoryList);
-    pool = pool.filter((n) => !excluded.has(n));
-  }
+  const pool = getPool();
   if (pool.length === 0) {
     alert("뽑을 수 있는 학생이 없어요. (모두 뽑았거나 입장한 학생이 없어요)");
     return;
   }
+  const finalPick = pool[Math.floor(Math.random() * pool.length)];
 
   picking = true;
   pickBtn.disabled = true;
-  const spinDuration = 1200;
-  const spinStep = 80;
-  const spinEndAt = Date.now() + spinDuration;
-  const spinTimer = setInterval(() => {
-    const r = pool[Math.floor(Math.random() * pool.length)];
-    pickerAvatar.textContent = avatarFor(r);
-    pickerNumber.textContent = studentLabel(r);
-    if (Date.now() >= spinEndAt) {
-      clearInterval(spinTimer);
-      const finalPick = pool[Math.floor(Math.random() * pool.length)];
-      pickerAvatar.textContent = avatarFor(finalPick);
-      pickerNumber.textContent = studentLabel(finalPick);
-      if (noRepeatInput.checked) {
-        push(ref(db, `sessions/${currentCode}/pickerHistory`), finalPick);
-      }
-      picking = false;
-      pickBtn.disabled = false;
-    }
-  }, spinStep);
+  if (pickerMode === "lottery") await runLottery(pool, finalPick);
+  else if (pickerMode === "race") await runRace(pool, finalPick);
+  else if (pickerMode === "pinball") await runPinball(pool, finalPick);
+  else await runSpinner(pool, finalPick);
+
+  if (noRepeatInput.checked) {
+    push(ref(db, `sessions/${currentCode}/pickerHistory`), finalPick);
+  }
+  picking = false;
+  pickBtn.disabled = false;
 });
 
 resetHistoryBtn.addEventListener("click", async () => {
@@ -272,6 +455,8 @@ async function init() {
   authStatus.textContent = "연결됨";
   authStatus.classList.remove("warn");
   authStatus.classList.add("ok");
+
+  renderIdleStage();
 
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved) {
