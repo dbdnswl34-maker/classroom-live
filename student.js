@@ -256,11 +256,19 @@ async function joinWithNumber(code) {
       joinError.textContent = "닉네임을 입력하세요.";
       return;
     }
+    joinBtn.disabled = true;
+    const existing = await get(ref(db, `sessions/${code}/students/${number}`));
+    if (existing.exists()) {
+      joinError.textContent = "이미 사용 중인 번호예요. 다른 번호를 입력하세요.";
+      joinBtn.disabled = false;
+      return;
+    }
     const student = { number, nickname };
     await set(ref(db, `sessions/${code}/students/${number}`), {
       nickname,
       joinedAt: serverTimestamp(),
     });
+    joinBtn.disabled = false;
     localStorage.setItem(studentKey(code), JSON.stringify(student));
     watchMode(code, student);
     setupWordSubmit(code, student);
